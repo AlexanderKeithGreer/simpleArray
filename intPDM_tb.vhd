@@ -8,14 +8,25 @@ entity intPDM_tb is
 end intPDM_tb;
 
 architecture tb of intPDM_tb is
+
+	component intPDM
+	generic(
+			  WInt : integer := 16
+			  );
+	port (	clk 	: in std_logic;
+				input	: in std_logic;
+				reset	: in std_logic;
+				output: out std_logic_vector(WInt-1 downto 0)
+		  );
+	end component;
+
 	constant WInt : integer := 4;
 	signal clk : std_logic;
 	signal input : std_logic;
 	signal reset : std_logic;
 	signal output : std_logic_vector(WInt-1 downto 0);
-	
 begin
-	UUT: entity work.intPDM generic map (WInt=>WInt) port map (clk=>clk, input=>input, reset => reset, output=>output);
+	UUT: intPDM generic map (WInt=>WInt) port map (clk=>clk, input=>input, reset => reset, output=>output);
 		
 	TB1: process
 		variable half_period : time := 5ns;
