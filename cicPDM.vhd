@@ -5,11 +5,12 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use IEEE.math_real.all;
 
 entity cicPDM is
 	generic (WInternal 		: integer := 16;
 			   WOut				: integer := 16;
-				delays			: integer := 2;
+				delays			: integer := 2; --Define as binary
 				stages			: integer := 2;
 				deciRateHalf	: integer := 20 --half cycle of decimation rate; 
 			   );
@@ -34,18 +35,18 @@ architecture arch of cicPDM is
 		  );
 	end component;
 
+	--Integrator - Req stages+1 memory slots
 	subtype SInternal is signed (WInternal-1 downto 0);
-	--internal integrator section - make 1 longer than needed for 
-	--											easy input/output management
-	
-	type AIntegratorT is array (0 to stages-1) of SInternal;
-	-- -1, see above, one stage is already done
-	
-	--internal delayline section - bleh
-	--internal comb section - make 1 longer than needed for easy 
-	--									input/output management
-	signal clkCount : unsigned (15 downto 0) := to_unsigned(0, 16);
+	type AIntegratorT is array (0 to stages) of SInternal;
 	signal AIntegrator : AIntegratorT;
+	
+	--Comb - composed of stages circular buffers of size delay
+	type ACombT is array (0 to stages*delays) of SInternal;
+	signal AComb : ACombT;
+	signal CombIndex : integer range 2**delays-1 downto 0 := 0;
+	
+	signal clkCount : unsigned (15 downto 0) := to_unsigned(0, 16);
+	
 begin
 	
 	--component instatiation for PDM integrators
@@ -55,6 +56,7 @@ begin
 	output <= std_logic_vector(AIntegrator(stages-1)(WInternal-1 downto WInternal-WOut));
 	
 	--Clock Divisor Process
+	--This process is likely best implemented via a PLL; leaving for now
 	div: process(clk, reset)
 	begin
 		if reset = '1' then
@@ -77,11 +79,25 @@ begin
 	begin
 		if reset = '1' then
 			--I'll do this later!
-		elsif rising_edge(clk) then
-			--I'll do this later
+		elsif rising_edge(clk) and stages > 1 then
+			for I in 1 to stages-2 loop	--For each stage except the first
+				AIntegrator(I+1) <= AIntegrator(I+1) + AIntegrator(I); --Add own contents to next
+			end loop;
 		end if;
 	end process int;
-	--Comb Process	
 	
+	
+	--Comb Process	
+	comb: process(clkL)
+		variable total 	: SInternal := to_signed(0, WInternal)
+		variable combDup 	: SInternal; 
+	begin
+		for I in 0 to stages-1 loop
+			CombDup := Acomb(I);
+			total <= total + Acomb(I);
+		end loop;
+		
+		combIndex <= combIndex + 1
+	end process comb;
 	
 end arch;
