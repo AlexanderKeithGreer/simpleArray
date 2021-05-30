@@ -89,15 +89,15 @@ begin
 	
 	--Comb Process	
 	comb: process(clkL)
-		variable total 	: SInternal := to_signed(0, WInternal)
+		variable total 	: SInternal := to_signed(0, WInternal);
 		variable combDup 	: SInternal; 
 	begin
 		for I in 0 to stages-1 loop
 			CombDup := Acomb(I);
-			total <= total + Acomb(I);
+			total := total + Acomb(I);
 		end loop;
 		
-		combIndex <= combIndex + 1
+		combIndex <= combIndex + 1;
 	end process comb;
 	
 end arch;

@@ -1,0 +1,10 @@
+--Last attempt to see if I can remember how this sort of testbench is written:
+
+entity combPDM_tb is
+end combPDM_tb;
+
+architecture tb of combPDM_tb is
+
+begin
+
+end tb;

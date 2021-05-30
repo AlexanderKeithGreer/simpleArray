@@ -8,7 +8,7 @@ use ieee.numeric_std.all;
 
 entity combPDM is
 	generic (WInternal 		: integer := 16;
-				delays			: integer := 2; --Define as binary
+				delays			: integer := 2
 			   );
 	port (clk			: in std_logic;	--Low Rate Clock
 			reset			: in std_logic;	--Asynchronous reset, should be triggered on startup
@@ -20,22 +20,33 @@ end combPDM;
 
 architecture arch of combPDM is
 	subtype SInternal is signed(WInternal-1 downto 0);
-	type ACombCircBuffT is array (0 to delays-1);
+	type ACombCircBuffT is array (0 to delays-1) of SInternal;
 	signal ACombCircBuff : ACombCircBuffT;
 	
 	signal index : integer range 0 to delays-1;
 begin
 	
 	comb: process(clk, input)
-		variable sum : SInternal := to_signed(0, WInternal)
+		variable sum : SInternal := to_signed(0, WInternal);
 	begin
 		if reset = '1' then
-			--reset???
-		elsif rising_edge(clk)
-			outputNext <= std_logic_vector(input + ACombCircBuff(index))
-			outputSum <= std_logic_vector(input + ACombCircBuff(index))
-			ACombCircBuff(index) <= signed(input, WInternal);
-			index <= index + 1;
+			index <= 0;
+			outputNext <= std_logic_vector(to_signed(0, WInternal));
+			outputSum <= std_logic_vector(to_signed(0, WInternal));
+			for I in 0 to delays-1 loop
+				ACombCircBuff(I) <= to_signed(0, WInternal);
+			end loop;
+			
+		elsif rising_edge(clk) then
+			outputNext <= std_logic_vector(signed(input) + ACombCircBuff(index));
+			outputSum <= std_logic_vector(signed(input) + ACombCircBuff(index));
+			ACombCircBuff(index) <= signed(input);
+			
+			if index = (delays-1) then
+				index <= 0;
+			else
+				index <= index + 1;
+			end if;
 		end if;
 	end process comb;
 end arch;
