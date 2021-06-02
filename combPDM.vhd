@@ -26,7 +26,7 @@ architecture arch of combPDM is
 	signal index : integer range 0 to delays-1;
 begin
 	
-	comb: process(clk, input)
+	comb: process(clk, input, reset)
 		variable sum : SInternal := to_signed(0, WInternal);
 	begin
 		if reset = '1' then

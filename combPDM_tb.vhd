@@ -19,24 +19,30 @@ architecture tb of combPDM_tb is
 				outputSum	: out std_logic_vector (WInternal-1 downto 0)
 				);
 	end component;
-
-	constant WInternal 		: integer := 8;
-	constant delays			: integer := 1;
+	
+	--Constants
+	constant WInternal: integer := 8;
+	constant delayD1	: integer := 1;
+	constant delayD2	: integer := 2;
+	--Inputs
 	signal clk			: std_logic;	--Low Rate Clock
 	signal reset		: std_logic;	--Asynchronous reset, should be triggered on startup
 	signal input 		: std_logic_vector (WInternal-1 downto 0);
-	signal outputNext	: std_logic_vector (WInternal-1 downto 0);
-	signal outputSum	: std_logic_vector (WInternal-1 downto 0);
 	
+	--Outputs
+	signal outputNextD1	: std_logic_vector (WInternal-1 downto 0);
+	signal outputSumD1	: std_logic_vector (WInternal-1 downto 0);
+	signal outputNextD2	: std_logic_vector (WInternal-1 downto 0);
+	signal outputSumD2	: std_logic_vector (WInternal-1 downto 0);
 	
 begin
-	UUT: combPDM 
-	generic map (WInternal=>WInternal, delays=>delays) 
-	port map (clk=>clk, reset=>reset, input=>input, outputNext=>outputNext, outputSum=>outputSum);
+	UUT_D1: combPDM 
+	generic map (WInternal=>WInternal, delays=>delayD1) 
+	port map (clk=>clk, reset=>reset, input=>input, outputNext=>outputNextD1, outputSum=>outputSumD1);
 	
-	UUT: combPDM 
-	generic map (WInternal=>WInternal, delays=>delays) 
-	port map (clk=>clk, reset=>reset, input=>input, outputNext=>outputNext, outputSum=>outputSum);
+	UUT_D2: combPDM 
+	generic map (WInternal=>WInternal, delays=>delayD2) 
+	port map (clk=>clk, reset=>reset, input=>input, outputNext=>outputNextD2, outputSum=>outputSumD2);
 	
 	process 
 		variable half_period : time := 5ns;
@@ -51,7 +57,7 @@ begin
 		clk <= '0';
 		wait for half_period;
 		
-		--Step 2; Test with +1, +1, part 1
+		--Step 2; Test with +1, +1, +1 part 1
 		input <= std_logic_vector(to_signed(1, WInternal));
 		
 		clk <= '1';
@@ -59,7 +65,7 @@ begin
 		clk <= '0';
 		wait for half_period;
 		
-		--Step 3; Test with +1, +1, part 2
+		--Step 3; Test with +1, +1, +1, part 2
 		input <= std_logic_vector(to_signed(1, WInternal));
 		
 		clk <= '1';
@@ -67,8 +73,8 @@ begin
 		clk <= '0';
 		wait for half_period;
 		
-		--Step 4; Wait for the internal buffer to be cleared
-		input <= std_logic_vector(to_signed(0, WInternal));
+		--Step 4; Test with +1, +1, +1, part 3
+		input <= std_logic_vector(to_signed(1, WInternal));
 		
 		clk <= '1';
 		wait for half_period;
@@ -83,15 +89,23 @@ begin
 		clk <= '0';
 		wait for half_period;
 		
-		--Step 6; Test with opposite signed inputs, part 1
-		input <= std_logic_vector(to_signed(-1, WInternal));
+		--Step 6; Wait for the internal buffer to be cleared
+		input <= std_logic_vector(to_signed(0, WInternal));
 		
 		clk <= '1';
 		wait for half_period;
 		clk <= '0';
 		wait for half_period;
 		
-		--Step 7; Test with opposite signed inputs, part 2
+			--Step 7; Wait for the internal buffer to be cleared
+		input <= std_logic_vector(to_signed(0, WInternal));
+		
+		clk <= '1';
+		wait for half_period;
+		clk <= '0';
+		wait for half_period;
+		
+		--Step 8; Test with wave f=fs/2, part 1
 		input <= std_logic_vector(to_signed(1, WInternal));
 		
 		clk <= '1';
@@ -99,8 +113,40 @@ begin
 		clk <= '0';
 		wait for half_period;
 		
-		--Step 8; Blank part, end of test
-		input <= std_logic_vector(to_signed(0, WInternal));
+		--Step 9; Test with wave f=fs/2, part 2
+		input <= std_logic_vector(to_signed(-1, WInternal));
+		
+		clk <= '1';
+		wait for half_period;
+		clk <= '0';
+		wait for half_period;
+		
+		--Step 10; Test with wave f=fs/2, part 3
+		input <= std_logic_vector(to_signed(1, WInternal));
+		
+		clk <= '1';
+		wait for half_period;
+		clk <= '0';
+		wait for half_period;
+		
+		--Step 11; Test with wave f=fs/2, part 4
+		input <= std_logic_vector(to_signed(-1, WInternal));
+		
+		clk <= '1';
+		wait for half_period;
+		clk <= '0';
+		wait for half_period;
+		
+		--Step 12; Test with wave f=fs/2, part 5
+		input <= std_logic_vector(to_signed(1, WInternal));
+		
+		clk <= '1';
+		wait for half_period;
+		clk <= '0';
+		wait for half_period;
+		
+		--Step 13; Test with wave f=fs/2, part 6 - induce cancellation
+		input <= std_logic_vector(to_signed(1, WInternal));
 		
 		clk <= '1';
 		wait for half_period;
