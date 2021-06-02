@@ -22,29 +22,43 @@ entity cicPDM is
 			);
 end cicPDM;
 
+
+
 --This is going to be fucking annoying
 architecture arch of cicPDM is
 
-	component intPDM
-	generic(	WInt : integer := 16
+	component intPDM --Interface for the initial integrator block
+		generic(	WInt : integer := 16
+				  );
+		port (	clk 	: in std_logic;
+					input	: in std_logic;
+					reset	: in std_logic;
+					output: out std_logic_vector(WInt-1 downto 0)
 			  );
-	port (	clk 	: in std_logic;
-				input	: in std_logic;
-				reset	: in std_logic;
-				output: out std_logic_vector(WInt-1 downto 0)
-		  );
 	end component;
 
+	component combPDM --Interface for the comb blocks
+		generic (WInternal 	: integer := 16;
+					delays		: integer := 2
+					);
+		port (clk		: in std_logic;	--Low Rate Clock
+				reset		: in std_logic;	--Asynchronous reset, should be triggered on startup
+				input 	: in std_logic_vector (WInternal-1 downto 0);
+				output	: out std_logic_vector (WInternal-1 downto 0)
+				);
+	end component;
+	
 	--Integrator - Req stages+1 memory slots
 	subtype SInternal is signed (WInternal-1 downto 0);
 	type AIntegratorT is array (0 to stages) of SInternal;
 	signal AIntegrator : AIntegratorT;
 	
 	--Comb - composed of stages circular buffers of size delay
-	type ACombT is array (0 to stages*delays) of SInternal;
+	subtype VInternal is std_logic_vector(WInternal-1 downto 0);
+	type ACombT is array (0 to stages) of VInternal;
 	signal AComb : ACombT;
-	signal CombIndex : integer range 2**delays-1 downto 0 := 0;
 	
+	--Clock divisor Counter
 	signal clkCount : unsigned (15 downto 0) := to_unsigned(0, 16);
 	
 begin
@@ -52,8 +66,16 @@ begin
 	--component instatiation for PDM integrators
 	INTPDM_COMP: intPDM generic map (WInt=>WInternal)
 								port map (clk=>clk, input=>input, reset=>reset, signed(output)=>AIntegrator(0));
-	--Dataflow modeling for connections
-	output <= std_logic_vector(AIntegrator(stages-1)(WInternal-1 downto WInternal-WOut));
+	--Connect the final integrator outpt to the first comb input
+	AComb(0) <= std_logic_vector(AIntegrator(stages));
+	--Connect each comb block
+	COMB_SECTION:
+	for C in 0 to stages-1 generate
+		COMBX: combPDM generic map (delays=>delays, WInternal=>WInternal)
+							port map (clk=>clkL, reset=>reset,
+							input=>AComb(C), output=>AComb(C+1));
+	end generate COMB_SECTION;
+	
 	
 	--Clock Divisor Process
 	--This process is likely best implemented via a PLL; leaving for now
@@ -89,15 +111,14 @@ begin
 	
 	--Comb Process	
 	comb: process(clkL)
-		variable total 	: SInternal := to_signed(0, WInternal);
-		variable combDup 	: SInternal; 
+		variable total : SInternal := to_signed(0, WInternal); 
 	begin
-		for I in 0 to stages-1 loop
-			CombDup := Acomb(I);
-			total := total + Acomb(I);
-		end loop;
-		
-		combIndex <= combIndex + 1;
+		if rising_edge(clkL) then
+			for C in 1 to stages loop
+				total := total + signed(AComb(C));
+			end loop;
+			output <= std_logic_vector(total(WInternal-1 downto WInternal-WOut));
+		end if;
 	end process comb;
 	
 end arch;

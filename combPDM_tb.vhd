@@ -12,11 +12,10 @@ architecture tb of combPDM_tb is
 		generic (WInternal	: integer := 16; --This is a component
 					delays		: integer := 2 --Define as binary
 					);
-		port (clk			: in std_logic;	--Low Rate Clock
-				reset			: in std_logic;	--Asynchronous reset, should be triggered on startup
-				input 		: in std_logic_vector (WInternal-1 downto 0);
-				outputNext	: out std_logic_vector (WInternal-1 downto 0);
-				outputSum	: out std_logic_vector (WInternal-1 downto 0)
+		port (clk		: in std_logic;	--Low Rate Clock
+				reset		: in std_logic;	--Asynchronous reset, should be triggered on startup
+				input 	: in std_logic_vector (WInternal-1 downto 0);
+				output	: out std_logic_vector (WInternal-1 downto 0)
 				);
 	end component;
 	
@@ -30,19 +29,16 @@ architecture tb of combPDM_tb is
 	signal input 		: std_logic_vector (WInternal-1 downto 0);
 	
 	--Outputs
-	signal outputNextD1	: std_logic_vector (WInternal-1 downto 0);
-	signal outputSumD1	: std_logic_vector (WInternal-1 downto 0);
-	signal outputNextD2	: std_logic_vector (WInternal-1 downto 0);
-	signal outputSumD2	: std_logic_vector (WInternal-1 downto 0);
-	
+	signal output	: std_logic_vector (WInternal-1 downto 0);
+
 begin
 	UUT_D1: combPDM 
-	generic map (WInternal=>WInternal, delays=>delayD1) 
-	port map (clk=>clk, reset=>reset, input=>input, outputNext=>outputNextD1, outputSum=>outputSumD1);
+	generic map (WInternal=>WInternal, delays=>delayD1)
+	port map (clk=>clk, reset=>reset, input=>input, output=>output);
 	
 	UUT_D2: combPDM 
 	generic map (WInternal=>WInternal, delays=>delayD2) 
-	port map (clk=>clk, reset=>reset, input=>input, outputNext=>outputNextD2, outputSum=>outputSumD2);
+	port map (clk=>clk, reset=>reset, input=>input, output=>output);
 	
 	process 
 		variable half_period : time := 5ns;
