@@ -8,8 +8,8 @@ use ieee.numeric_std.all;
 use IEEE.math_real.all;
 
 entity cicPDM is
-	generic (WInternal 		: integer := 16;
-			   WOut				: integer := 16;
+	generic (WInternal 		: integer := 24;
+			   WOut				: integer := 24;
 				delays			: integer := 2; --Define as binary
 				stages			: integer := 2;
 				deciRateHalf	: integer := 20 --half cycle of decimation rate; 
@@ -48,26 +48,28 @@ architecture arch of cicPDM is
 				);
 	end component;
 	
-	--Integrator - Req stages+1 memory slots
+	--Integrator - Req stages memory slots
 	subtype SInternal is signed (WInternal-1 downto 0);
-	type AIntegratorT is array (0 to stages) of SInternal;
+	subtype VInternal is std_logic_vector(WInternal-1 downto 0);
+	type AIntegratorT is array (0 to stages-1) of SInternal;
 	signal AIntegrator : AIntegratorT;
 	
 	--Comb - composed of stages circular buffers of size delay
-	subtype VInternal is std_logic_vector(WInternal-1 downto 0);
 	type ACombT is array (0 to stages) of VInternal;
 	signal AComb : ACombT;
 	
 	--Clock divisor Counter
 	signal clkCount : unsigned (15 downto 0) := to_unsigned(0, 16);
 	
+	signal toIntegrators : VInternal;
+	
 begin
 	
 	--component instatiation for PDM integrators
 	INTPDM_COMP: intPDM generic map (WInt=>WInternal)
-								port map (clk=>clk, input=>input, reset=>reset, signed(output)=>AIntegrator(0));
+								port map (clk=>clk, input=>input, reset=>reset, output=>toIntegrators);
 	--Connect the final integrator outpt to the first comb input
-	AComb(0) <= std_logic_vector(AIntegrator(stages));
+	AComb(0) <= std_logic_vector(AIntegrator(stages-1));
 	--Connect each comb block
 	COMB_SECTION:
 	for C in 0 to stages-1 generate
@@ -76,6 +78,7 @@ begin
 							input=>AComb(C), output=>AComb(C+1));
 	end generate COMB_SECTION;
 	
+	output <= AComb(stages)(WInternal-1 downto WInternal - WOut);
 	
 	--Clock Divisor Process
 	--This process is likely best implemented via a PLL; leaving for now
@@ -83,7 +86,7 @@ begin
 	begin
 		if reset = '1' then
 			clkCount <= to_unsigned(0, 16);
-			clkL <= '1';
+			clkL <= '0';
 		elsif rising_edge(clk) then
 			if clkCount = to_unsigned(deciRateHalf, 16) then
 				--Reset to 1 because this counts as a step!
@@ -97,28 +100,35 @@ begin
 	
 	
 	--Integration process
-	int: process(clk)
+	int: process(clk, reset)
 	begin
 		if reset = '1' then
-			--I'll do this later!
-		elsif rising_edge(clk) and stages > 1 then
-			for I in 1 to stages-2 loop	--For each stage except the first
-				AIntegrator(I+1) <= AIntegrator(I+1) + AIntegrator(I); --Add own contents to next
+			for I in 0 to stages-1 loop	--For each stage except the first
+				AIntegrator(I) <= to_signed(0, WInternal); --Zero integrators
 			end loop;
+		elsif rising_edge(clk) then 
+			AIntegrator(0) <= signed(toIntegrators);
+			if stages > 1 then
+				for I in 0 to stages-2 loop	--For each stage except the first
+					AIntegrator(I+1) <= AIntegrator(I+1) + AIntegrator(I);
+				end loop;
+			end if;
 		end if;
 	end process int;
 	
 	
 	--Comb Process	
-	comb: process(clkL)
-		variable total : SInternal := to_signed(0, WInternal); 
-	begin
-		if rising_edge(clkL) then
-			for C in 1 to stages loop
-				total := total + signed(AComb(C));
-			end loop;
-			output <= std_logic_vector(total(WInternal-1 downto WInternal-WOut));
-		end if;
-	end process comb;
+	--comb: process(clkL, reset)
+	--	variable total : SInternal := to_signed(0, WInternal); 
+	--begin
+	--	if reset = '1' then
+	--		output <= std_logic_vector(to_signed(0, WOut));
+	--	elsif rising_edge(clkL) then
+	--		for C in 1 to stages loop
+	--			total := total + signed(AComb(C));
+	--		end loop;
+	--		output <= std_logic_vector(total(WInternal-1 downto WInternal-WOut));
+	--	end if;
+	--end process comb;
 	
 end arch;

@@ -36,7 +36,7 @@ begin
 			end loop;
 			
 		elsif rising_edge(clk) then
-			output <= std_logic_vector(signed(input) + ACombCircBuff(index));
+			output <= std_logic_vector(signed(input) - ACombCircBuff(index));
 			ACombCircBuff(index) <= signed(input);
 			
 			if index = (delays-1) then
