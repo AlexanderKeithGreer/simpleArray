@@ -1,3 +1,3 @@
-This is simpleArray
+This repo was originally intended to be a learning exercise for VHDL.
 
-It is an attempt to work out how to use FPGAs for signal processing, and thus will be intrinsically messy and I will probably "fishtail" a lot. I'm focusing on intel (specifically cyclone 10 and cyclone IV) for now.
+I've opted to pivot to working with verilog instead, however, the project retains its original purpose of being a learning tool centred around PDM microphone array decimation via CICs. Not really a finished work, of course.
