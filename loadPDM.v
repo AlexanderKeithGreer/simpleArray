@@ -17,7 +17,8 @@ module loadPDM #(
    output wire o_clk,         //Clock to microphone
    output wire [p_width-1:0] o_dataR, //Data clocked on rising edge
    output wire [p_width-1:0] o_dataF, //Data clocked on falling edge
-	output wire [p_width-1:0] o_debug  //This one's harder...?
+	output wire [p_width-1:0] o_debugR,  //This one's harder...?
+	output wire [p_width-1:0] o_debugF  //This one's harder...?
    );
 
 
@@ -60,7 +61,8 @@ module loadPDM #(
 	assign o_clk = r_polarity;
 	assign o_dataR = r_outBufferR;
 	assign o_dataF = r_outBufferF;
-	assign o_debug = r_combR[0][0];
+	assign o_debugR = r_combR[0][0];
+	assign o_debugF = r_combF[0][0];
 	
 	
 	//Meaningful part of the CIC
