@@ -1,8 +1,8 @@
 ////////////////////////
 //  	loadPDM         //
 ////////////////////////
-// 2 delay, parameterised stage CIC, with custome
-
+// 2 delay, parameterised stage CIC, with custom
+// Output clock is half the internal clock frequency
 
 
 module loadPDM #(
@@ -23,15 +23,15 @@ module loadPDM #(
 
 
 	/*
-	
+
 		Eg: 2 stage, 2 delay...
-	
+
 		----(+)----+---(+)----+---[/.]----+---->{-}---+-----{-}-->
 			  |	  |    |	    |           |      |\   |      |\
 			  |	  |    | 	 |           |      |    |      |
-			  +-[Z]-+  	 +-[Z]-+			    +-Z--Z-+    +-Z--Z-+ 
-	
-	
+			  +-[Z]-+  	 +-[Z]-+			    +-Z--Z-+    +-Z--Z-+
+
+
 	*/
 
    reg r_polarity = 1'b0;
@@ -45,10 +45,10 @@ module loadPDM #(
 
 	reg [p_width-1:0] r_outBufferR;
 	reg [p_width-1:0] r_outBufferF;
-	
+
 	integer R; //Loop variable -- stage
 	integer D; //Loop variable -- delay
-	
+
 	//Literally just wiggle the output clock and parse it.
 	always @ (posedge i_clk, posedge i_reset)
 	begin
@@ -63,8 +63,8 @@ module loadPDM #(
 	assign o_dataF = r_outBufferF;
 	assign o_debugR = r_combR[0][0];
 	assign o_debugF = r_combF[0][0];
-	
-	
+
+
 	//Meaningful part of the CIC
 	//Grumble at me to split this up!
 	always @(posedge i_clk, posedge i_reset)
@@ -112,19 +112,19 @@ module loadPDM #(
 		end
 		else
 		begin
-		
+
 			//These two lines may want to be assigns
 			//	but it's fine so long as strobe is not held down
 			r_combR[0][0] <= r_integR[p_stages-1];
 			r_combF[0][0] <= r_integF[p_stages-1];
-				
+
 			if (i_strobe == 1'b1)
 			begin
 				r_combR[0][2] <= r_combR[0][1];
 				r_combF[0][2] <= r_combF[0][1];
 				r_combR[0][1] <= r_combR[0][0];
 				r_combF[0][1] <= r_combF[0][0];
-				
+
 				for (R = 1; R <= p_stages; R = R+1)
 				begin
 					r_combR[R][2] <= r_combR[R][1]; //In theory I could generalise the delays,
@@ -139,9 +139,9 @@ module loadPDM #(
 			//Comb section end
 		end
 	end
-	
-	
-	always @ (posedge i_clk)
+
+
+	always @ (posedge i_clk )
 	begin
 		if (i_reset == 1'b1)
 		begin
@@ -157,8 +157,8 @@ module loadPDM #(
 					r_outBufferF <= r_combF[p_stages][0];
 			end
 		end
-		
+
 	end
-	
+
 
 endmodule

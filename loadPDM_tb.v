@@ -18,7 +18,7 @@ module loadPDM_tb;
 	reg r_inputF;
 	reg r_input;
 	reg r_strobe;
-	
+
 	////////////////////////////////////////////////////
 	//  This section deals with the loading of data and
 	//		and also oscillates the clock
@@ -28,14 +28,14 @@ module loadPDM_tb;
 	integer r = 1;
 	localparam c_n = 4;
 	reg [c_n*8-1:0] r_string;
-	
-	initial 
+
+	initial
 	begin
 		file = $fopen("C:/Users/Alexander Greer/Documents/simpleArray/input_loadPDM.txt", "r");
 		while (r > 0) // sfgets returns 0 at EoF
 		begin
 			r = $fscanf(file,"%b %b %b\n", r_inputR, r_inputF, r_strobe);
-			
+
 			if (r > 0)
 			begin
 				r_input <= r_inputR;
@@ -49,25 +49,25 @@ module loadPDM_tb;
 				r_clk = 1'b1;
 				#c_halfClk;
 			end
-			
+
 		end
-		
+
 		$fclose(file);
 	end
-	
-	
+
+
 	//////////////////////////////////////////////////////
 	//  This section deals with the actual interfacing HDL
 	//		and also the reset
 	//////////////////////////////////////////////////////
-	
+
 	reg r_reset;
 	wire w_clk;
 	wire [c_width-1:0] w_dataR;
 	wire [c_width-1:0] w_dataF;
 	wire [c_width-1:0] w_debugR;
 	wire [c_width-1:0] w_debugF;
-		
+
 	//Startup reset
 	initial
 	begin
@@ -75,8 +75,8 @@ module loadPDM_tb;
 		#c_resetLen;
 		r_reset = 1'b0;
 	end
-	
-	loadPDM #(c_width, 1, 1) uut (r_input, r_clk, r_reset, 
-				r_strobe, w_clk, w_dataR, w_dataF, w_debugR, w_debugF);	
-	
-endmodule 
+
+	loadPDM #(12, 1, 2) uut (r_input, r_clk, r_reset,
+				r_strobe, w_clk, w_dataR, w_dataF, w_debugR, w_debugF);
+
+endmodule
