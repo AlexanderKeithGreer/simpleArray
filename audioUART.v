@@ -13,53 +13,55 @@ module audioUART
 		output wire o_serial
 	);
 
-	reg r_ready;
-	reg [7:0] r_data; //Buffer data during process.
-	assign o_ready = r_ready;
-
 	//10 possible states - Start, Stop/Idle, data[7:0]
 	//Increment, remembering that UART is little endian bitwise
 	//Integer FSM, I don't need to run this very fast
 	localparam  l_START = 9;
 	localparam  l_STOP = 8;
-	reg r_state = l_START;
+	integer r_state = l_START;
+	
+	reg r_ready;
+	reg r_serial;
+	reg [7:0] r_data; //Buffer data during process.
+	assign o_ready = r_ready;
+	assign o_serial = r_serial;
 
 
-	always @ (posedge i_clk, i_rst)
+	always @ (posedge i_clk, posedge i_rst)
 	begin
 		if (i_rst == 1'b1)
 		begin
-			r_outBit <= 1'b1;
-			r_data <= 8'x0
-			o_serial <= 1'b0;
-			o_ready <= 1'b0;
+			r_state <= l_STOP;
+			r_data <= 8'b00001111;
+			r_serial <= 1'b0;
+			r_ready <= 1'b0;
 		end
 		else if (i_clk == 1'b1)
 		begin
-			case (r_currState) //Deals with transitions
+			case (r_state) //Deals with transitions
 				//The Stop bit/idle state
 				l_START: if (i_valid == 1'b1  && r_ready == 1'b1)
 					begin
 						r_ready <= 1'b0;
 						r_data <= i_data;
-						o_serial <= 1'b0;
-						r_currState <= 0;
+						r_serial <= 1'b0;
+						r_state <= 0;
 					end
 
 				l_STOP: begin
-						r_currState <= l_START;
+						r_state <= l_START;
 						r_ready <= 1'b1;
-						o_serial <= 1'b1;
+						r_serial <= 1'b1;
 					end
 
 				default: begin
-						r_currState <= r_currState + 1;
-						r_ready <= 1'b0;
-						o_serial <= r_data[r_currState];
+						r_state <= r_state + 1;
+						r_ready <= (r_state == 7) ? 1'b1 : 1'b0;
+						r_serial <= r_data[r_state];
 					end
 
 			endcase
 		end
-	end;
+	end
 
-endmodule;
+endmodule
